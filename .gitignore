@@ -3,5 +3,5 @@ node_modules
 .env
 
 /generated/prisma
-client.json
+client_secret.json
 .vercel

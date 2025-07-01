@@ -28,6 +28,10 @@ router.get(
     session: false,
   }),
   async (req, res) => {
+    if (!req.user) {
+      // Not authorized, redirect to login or show error
+      return res.redirect("/login");
+    }
     const accessToken = generateAccessToken(req.user.id);
     const refreshToken = generateRefreshToken(req.user.id);
 
@@ -44,7 +48,8 @@ router.get(
     });
 
     // Redirect to home page after Google OAuth
-    res.redirect("http://localhost:3000/");
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000/";
+    res.redirect(frontendUrl);
   }
 );
 
