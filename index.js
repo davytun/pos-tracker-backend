@@ -6,12 +6,11 @@ import passport from "passport";
 import session from "express-session";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import serverless from "serverless-http";
 
 config();
-import "../config/passport.js";
-import authRoutes from "../routes/authRoutes.js";
-import authMiddleware from "../middleware/auth.js";
+import "./config/passport.js";
+import authRoutes from "./routes/authRoutes.js";
+import authMiddleware from "./middleware/auth.js";
 
 const app = express();
 
@@ -32,16 +31,18 @@ app.use(
 );
 
 const dbUrl = process.env.DATABASE_URL;
-await connect(dbUrl).then(() => console.log("Mongo connected"));
+
+connect(dbUrl).then(() => console.log("Mongo connected"));
 
 app.use("/auth", authRoutes);
 
-// Protected test route
+// Example: Protect a test route
 app.get("/protected", authMiddleware, (req, res) => {
   res.json({ message: "You are authenticated!", user: req.user });
 });
 
 app.get("/", (req, res) => res.send("API Running"));
 
-// ❗ No app.listen()
-export const handler = serverless(app);
+app.listen(process.env.PORT, () =>
+  console.log(`Server running on ${process.env.PORT}`)
+);

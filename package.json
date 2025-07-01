@@ -4,7 +4,7 @@
   "description": "",
   "main": "api/index.js",
   "scripts": {
-    "dev": "nodemon api/index.js",
+    "dev": "nodemon index.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],
