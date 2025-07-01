@@ -1,0 +1,14 @@
+### Get all items
+GET http://localhost:5000/
+Accept: application/json
+
+
+
+#### Create an item
+#POST http://localhost:3000/api/items
+#Content-Type: application/json
+#
+#{
+#  "name": "Test Item",
+#  "price": 10.99
+#}
