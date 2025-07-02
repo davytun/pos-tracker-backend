@@ -141,6 +141,7 @@ router.post('/login', loginUser);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse' # Returns updated user and potentially new token
+
  *       400:
  *         description: Validation error
  *         content:

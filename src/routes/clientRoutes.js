@@ -10,6 +10,7 @@ import {
 } from '../controllers/clientController.js';
 import protect from '../middleware/authMiddleware.js'; // Assuming auth middleware is ready
 
+
 const router = express.Router();
 
 /**
@@ -42,6 +43,7 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Client'
  *       400:
  *         description: Invalid input or validation error (e.g., missing name/phone)
+
  *         content:
  *           application/json:
  *             schema:
@@ -69,6 +71,7 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         description: Filter clients by name (case-insensitive, partial match)
+
  *       - in: query
  *         name: eventType
  *         schema:
