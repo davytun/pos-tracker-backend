@@ -8,9 +8,6 @@ const router = express.Router();
 router.use(protect);
 router.use(admin);
 
-// @desc    Routes for admin functionalities
-// @access  Private/Admin
-
 /**
  * @swagger
  * tags:
@@ -70,7 +67,7 @@ router.get('/stats', getAdminStats);
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/User' # User schema without password
+ *                 $ref: '#/components/schemas/User'
  *       401:
  *         description: Not authorized
  *         content:
