@@ -6,8 +6,9 @@ import {
   updateStyle,
   deleteStyle,
 } from '../controllers/styleController.js';
-import upload from '../middleware/uploadMiddleware.js';
-import protect from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js'; // For handling image uploads
+import protect from '../middleware/authMiddleware.js';   // Assuming auth middleware is ready
+
 
 const router = express.Router();
 
@@ -32,6 +33,12 @@ const router = express.Router();
  *         multipart/form-data:
  *           schema:
  *             $ref: '#/components/schemas/StyleInput'
+ *           examples:
+ *             example1:
+ *               value:
+ *                 name: "Casual Summer Dress"
+ *                 category: "Casual"
+ *                 description: "A light, airy dress for summer."
  *     responses:
  *       201:
  *         description: Style created successfully
@@ -40,7 +47,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Style'
  *       400:
- *         description: Invalid input or image upload error
+ *         description: Invalid input, missing required fields, or image upload error
  *         content:
  *           application/json:
  *             schema:
@@ -68,12 +75,12 @@ const router = express.Router();
  *         schema:
  *           type: string
  *           enum: ['Traditional', 'Wedding', 'Casual', 'Corporate', 'Evening Wear', 'Other']
- *         description: Filter by category
+ *         description: Filter styles by category
  *       - in: query
  *         name: name
  *         schema:
  *           type: string
- *         description: Filter by name (partial match)
+ *         description: Filter styles by name (case-insensitive, partial match)
  *     responses:
  *       200:
  *         description: A list of styles
@@ -114,7 +121,7 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Style ID
+ *         description: The style ID
  *     responses:
  *       200:
  *         description: Style data
@@ -151,12 +158,13 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Style ID
+ *         description: The style ID
+
  *     requestBody:
  *       content:
  *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/StyleUpdateInput'
+ *             $ref: '#/components/schemas/StyleUpdateInput' # References the schema for text fields and optional image
  *     responses:
  *       200:
  *         description: Style updated successfully
@@ -165,19 +173,20 @@ router.route('/')
  *             schema:
  *               $ref: '#/components/schemas/Style'
  *       400:
- *         description: Validation error
+ *         description: Invalid input or validation error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Not found
+ *         description: Style not found
+
  *         content:
  *           application/json:
  *             schema:
@@ -199,10 +208,10 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Style ID
+ *         description: The style ID
  *     responses:
  *       200:
- *         description: Style deleted
+ *         description: Style removed successfully
  *         content:
  *           application/json:
  *             schema:
@@ -212,13 +221,14 @@ router.route('/')
  *                   type: string
  *                   example: Style removed
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Not found
+ *         description: Style not found
+
  *         content:
  *           application/json:
  *             schema:
