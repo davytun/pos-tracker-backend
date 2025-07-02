@@ -9,6 +9,7 @@ import {
 import upload from '../middleware/uploadMiddleware.js'; // For handling image uploads
 import protect from '../middleware/authMiddleware.js';   // Assuming auth middleware is ready
 
+
 const router = express.Router();
 
 /**
@@ -158,6 +159,7 @@ router.route('/')
  *         schema:
  *           type: string
  *         description: The style ID
+
  *     requestBody:
  *       content:
  *         multipart/form-data:
@@ -184,6 +186,7 @@ router.route('/')
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Style not found
+
  *         content:
  *           application/json:
  *             schema:
@@ -225,6 +228,7 @@ router.route('/')
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Style not found
+
  *         content:
  *           application/json:
  *             schema:
