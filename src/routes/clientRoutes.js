@@ -8,7 +8,8 @@ import {
   linkStyleToClient,
   getClientStyles
 } from '../controllers/clientController.js';
-import protect from '../middleware/authMiddleware.js';
+import protect from '../middleware/authMiddleware.js'; // Assuming auth middleware is ready
+
 
 const router = express.Router();
 
@@ -41,7 +42,8 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Client'
  *       400:
- *         description: Invalid input or validation error
+ *         description: Invalid input or validation error (e.g., missing name/phone)
+
  *         content:
  *           application/json:
  *             schema:
@@ -68,15 +70,16 @@ const router = express.Router();
  *         name: name
  *         schema:
  *           type: string
- *         description: Filter clients by name
+ *         description: Filter clients by name (case-insensitive, partial match)
+
  *       - in: query
  *         name: eventType
  *         schema:
  *           type: string
- *         description: Filter by event type
+ *         description: Filter clients by event type (case-insensitive, partial match)
  *     responses:
  *       200:
- *         description: List of clients
+ *         description: A list of clients
  *         content:
  *           application/json:
  *             schema:
@@ -104,7 +107,7 @@ router.route('/')
  * @swagger
  * /clients/{id}:
  *   get:
- *     summary: Get a client by ID
+ *     summary: Get a specific client by ID
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
@@ -114,16 +117,16 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Client ID
+ *         description: The client ID
  *     responses:
  *       200:
- *         description: Client details
+ *         description: Client data
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Client'
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
@@ -141,7 +144,7 @@ router.route('/')
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *   put:
- *     summary: Update a client
+ *     summary: Update a specific client
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
@@ -151,34 +154,34 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Client ID
+ *         description: The client ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ClientInput'
+ *             $ref: '#/components/schemas/ClientInput' # Can reuse or create a specific update schema
  *     responses:
  *       200:
- *         description: Updated client
+ *         description: Client updated successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Client'
  *       400:
- *         description: Validation error
+ *         description: Invalid input or validation error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Not found
+ *         description: Client not found
  *         content:
  *           application/json:
  *             schema:
@@ -190,7 +193,7 @@ router.route('/')
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *   delete:
- *     summary: Delete a client
+ *     summary: Delete a specific client
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
@@ -200,10 +203,10 @@ router.route('/')
  *         required: true
  *         schema:
  *           type: string
- *         description: Client ID
+ *         description: The client ID
  *     responses:
  *       200:
- *         description: Client removed
+ *         description: Client removed successfully
  *         content:
  *           application/json:
  *             schema:
@@ -213,7 +216,7 @@ router.route('/')
  *                   type: string
  *                   example: Client removed
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
@@ -250,7 +253,7 @@ router.route('/:id')
  *         required: true
  *         schema:
  *           type: string
- *         description: Client ID
+ *         description: The ID of the client to link the style to
  *     requestBody:
  *       required: true
  *       content:
@@ -259,25 +262,25 @@ router.route('/:id')
  *             $ref: '#/components/schemas/LinkStyleToClientInput'
  *     responses:
  *       200:
- *         description: Style linked successfully
+ *         description: Style linked successfully, returns the updated client
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Client'
  *       400:
- *         description: Invalid or duplicate
+ *         description: Style already linked or invalid styleId
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Not found
+ *         description: Client or Style not found
  *         content:
  *           application/json:
  *             schema:
@@ -289,7 +292,7 @@ router.route('/:id')
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *   get:
- *     summary: Get all styles linked to a client
+ *     summary: Get all styles linked to a specific client
  *     tags: [Clients]
  *     security:
  *       - bearerAuth: []
@@ -299,18 +302,18 @@ router.route('/:id')
  *         required: true
  *         schema:
  *           type: string
- *         description: Client ID
+ *         description: The client ID
  *     responses:
  *       200:
- *         description: List of styles
+ *         description: A list of styles linked to the client
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Style'
+ *                 $ref: '#/components/schemas/Style' # Assumes populated styles
  *       401:
- *         description: Unauthorized
+ *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
