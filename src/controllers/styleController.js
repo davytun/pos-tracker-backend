@@ -1,11 +1,18 @@
-import Style from '../models/StyleModel.js';
-import Client from '../models/ClientModel.js';
+import Style from "../models/StyleModel.js";
+import Client from "../models/ClientModel.js";
 // import cloudinary from '../config/cloudinaryConfig.js'; // Now handled by service
 // import fs from 'fs/promises'; // Now handled by service
-import { uploadImageToCloudinary, deleteImageFromCloudinary, attemptCloudinaryDelete } from '../services/styleService.js';
-import { BadRequestError, NotFoundError, AppError } from '../utils/customErrors.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import mongoose from 'mongoose';
+import {
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+  attemptCloudinaryDelete,
+} from "../services/styleService.js";
+import AppError, {
+  BadRequestError,
+  NotFoundError,
+} from "../utils/customErrors.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import mongoose from "mongoose";
 
 // @desc    Upload a new style image and create style record
 // @route   POST /api/v1/styles
@@ -14,16 +21,19 @@ export const createStyle = asyncHandler(async (req, res, next) => {
   const { name, category, description } = req.body;
 
   if (!name || !category) {
-    return next(new BadRequestError('Name and category are required fields'));
+    return next(new BadRequestError("Name and category are required fields"));
   }
   if (!req.file) {
-    return next(new BadRequestError('Style image is required'));
+    return next(new BadRequestError("Style image is required"));
   }
 
   let uploadedImageResult;
   try {
     // Service handles upload and local file cleanup
-    uploadedImageResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
+    uploadedImageResult = await uploadImageToCloudinary(
+      req.file.path,
+      "fashion_styles"
+    );
 
     const style = new Style({
       name,
@@ -37,7 +47,11 @@ export const createStyle = asyncHandler(async (req, res, next) => {
     res.status(201).json(createdStyle);
   } catch (error) {
     // If Cloudinary upload succeeded but DB save failed, attempt to delete from Cloudinary
-    if (uploadedImageResult && uploadedImageResult.public_id && !(error instanceof AppError && error.statusCode < 500)) {
+    if (
+      uploadedImageResult &&
+      uploadedImageResult.public_id &&
+      !(error instanceof AppError && error.statusCode < 500)
+    ) {
       // Only delete if it's a server error or DB error, not a client-side validation error that might have prevented the attempt
       await attemptCloudinaryDelete(uploadedImageResult.public_id);
     }
@@ -57,7 +71,7 @@ export const getStyles = asyncHandler(async (req, res, next) => {
     queryObject.category = category;
   }
   if (name) {
-    queryObject.name = { $regex: name, $options: 'i' };
+    queryObject.name = { $regex: name, $options: "i" };
   }
 
   const styles = await Style.find(queryObject);
@@ -99,19 +113,27 @@ export const updateStyle = asyncHandler(async (req, res, next) => {
   try {
     // Service handles upload and local file cleanup
     if (req.file) {
-      newImageUploadResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
+      newImageUploadResult = await uploadImageToCloudinary(
+        req.file.path,
+        "fashion_styles"
+      );
       style.imageUrl = newImageUploadResult.secure_url;
       style.cloudinaryPublicId = newImageUploadResult.public_id;
     }
 
     style.name = name || style.name;
     style.category = category || style.category;
-    style.description = description === undefined ? style.description : description;
+    style.description =
+      description === undefined ? style.description : description;
 
     const updatedStyle = await style.save();
 
     // If a new image was successfully uploaded and DB saved, delete the old one
-    if (req.file && oldPublicId && oldPublicId !== updatedStyle.cloudinaryPublicId) {
+    if (
+      req.file &&
+      oldPublicId &&
+      oldPublicId !== updatedStyle.cloudinaryPublicId
+    ) {
       await attemptCloudinaryDelete(oldPublicId); // Use attempt to not fail the whole op if old img deletion fails
     }
 
@@ -158,5 +180,5 @@ export const deleteStyle = asyncHandler(async (req, res, next) => {
     await attemptCloudinaryDelete(publicIdToDelete);
   }
 
-  res.json({ message: 'Style removed successfully' });
+  res.json({ message: "Style removed successfully" });
 });
