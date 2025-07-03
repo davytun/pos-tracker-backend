@@ -53,7 +53,7 @@ app.use('/api', limiter);
 
 // Mount core routers
 app.use('/api/v1/clients', clientRoutes);
-app.use('/api/v1/styles', styleRoutes);
+// app.use('/api/v1/styles', styleRoutes); // Temporarily commented out
 app.use('/api/v1/auth', authRoutes);
 // app.use('/api/v1/admin', adminRoutes); // Temporarily commented out
 
