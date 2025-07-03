@@ -55,13 +55,13 @@ describe('Client API Endpoints', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(rawSampleClientData); // Send raw data
     if (res.body && res.body._id) {
-        testClientId = res.body._id;
+      testClientId = res.body._id;
     } else {
-        console.error("Failed to create initial client for tests:", res.body, res.status);
-        // Fallback, though this path indicates a problem with the test setup or API
-        const client = new Client(expectedEscapedClientData); // Save escaped data if manually creating
-        const savedClient = await client.save();
-        testClientId = savedClient._id.toString();
+      console.error("Failed to create initial client for tests:", res.body, res.status);
+      // Fallback, though this path indicates a problem with the test setup or API
+      const client = new Client(expectedEscapedClientData); // Save escaped data if manually creating
+      const savedClient = await client.save();
+      testClientId = savedClient._id.toString();
     }
   });
 
@@ -94,7 +94,7 @@ describe('Client API Endpoints', () => {
       expect(res.body.errors[0].msg).toBe('Client name is required.');
     });
 
-     it('should fail to create a client without required fields (phone)', async () => {
+      it('should fail to create a client without required fields (phone)', async () => {
       const { phone, ...incompleteClient } = rawSampleClientData;
       const res = await request(app)
         .post('/api/v1/clients')
