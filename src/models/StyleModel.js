@@ -48,6 +48,10 @@ const styleSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for frequently queried fields
+styleSchema.index({ category: 1 }); // For filtering by category
+styleSchema.index({ name: 1 }); // For regex search on name
+
 // Middleware to update `updatedAt` field before each save
 styleSchema.pre('save', function (next) {
   this.updatedAt = Date.now();

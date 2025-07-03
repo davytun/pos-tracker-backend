@@ -1,172 +1,146 @@
 import Style from '../models/StyleModel.js';
 import Client from '../models/ClientModel.js';
-import cloudinary from '../config/cloudinaryConfig.js';
-import fs from 'fs/promises'; // For handling temporary file if needed, or use stream directly
+import { uploadImageToCloudinary, deleteImageFromCloudinary, attemptCloudinaryDelete } from '../services/styleService.js';
+import { BadRequestError, NotFoundError, AppError } from '../utils/customErrors.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import mongoose from 'mongoose';
 
 // @desc    Upload a new style image and create style record
 // @route   POST /api/v1/styles
 // @access  Private (TODO: Add auth middleware)
-export const createStyle = async (req, res) => {
+export const createStyle = asyncHandler(async (req, res, next) => {
+  const { name, category, description } = req.body;
+
+  if (!name || !category) {
+    return next(new BadRequestError('Name and category are required fields'));
+  }
+  if (!req.file) {
+    return next(new BadRequestError('Style image is required'));
+  }
+
+  let uploadedImageResult;
   try {
-    const { name, category, description } = req.body;
-
-    if (!name || !category) {
-      return res.status(400).json({ message: 'Name and category are required' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ message: 'Style image is required' });
-    }
-
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'fashion_styles', // Optional: specify a folder in Cloudinary
-      // transformation: [{ width: 500, height: 500, crop: 'limit' }] // Optional: image transformations
-    });
-
-    // Optional: Delete the temporary file from server after upload to Cloudinary if multer saves it locally
-    // await fs.unlink(req.file.path); // Only if multer is configured to save to disk first
+    uploadedImageResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
 
     const style = new Style({
       name,
       category,
       description,
-      imageUrl: result.secure_url,
-      cloudinaryPublicId: result.public_id,
+      imageUrl: uploadedImageResult.secure_url,
+      cloudinaryPublicId: uploadedImageResult.public_id,
     });
 
     const createdStyle = await style.save();
     res.status(201).json(createdStyle);
   } catch (error) {
-    console.error('Error creating style:', error);
-    // If file was uploaded and then DB save failed, consider deleting from Cloudinary
-    if (req.file && error.name !== 'ValidationError') { // Check if it's not a validation error before DB
-        // Potentially delete from Cloudinary if `result` is available
+    if (uploadedImageResult && uploadedImageResult.public_id && !(error instanceof AppError && error.statusCode < 500)) {
+      await attemptCloudinaryDelete(uploadedImageResult.public_id);
     }
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
-    }
-    res.status(500).json({ message: 'Server Error: Could not create style' });
+    return next(error);
   }
-};
+});
 
 // @desc    Get all styles
 // @route   GET /api/v1/styles
 // @access  Private (TODO: Add auth middleware)
-export const getStyles = async (req, res) => {
-  try {
-    const { category, name } = req.query;
-    const queryObject = {};
+export const getStyles = asyncHandler(async (req, res, next) => {
+  const { category, name } = req.query;
+  const queryObject = {};
 
-    if (category) {
-      queryObject.category = category; // Exact match for category
-    }
-    if (name) {
-      queryObject.name = { $regex: name, $options: 'i' }; // Case-insensitive search for name
-    }
-
-    const styles = await Style.find(queryObject); // .populate('clients') if needed
-    res.json(styles);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error: Could not fetch styles' });
+  if (category) {
+    queryObject.category = category;
   }
-};
+  if (name) {
+    queryObject.name = { $regex: name, $options: 'i' };
+  }
+
+  const styles = await Style.find(queryObject);
+  res.json(styles);
+});
 
 // @desc    Get a single style by ID
 // @route   GET /api/v1/styles/:id
 // @access  Private (TODO: Add auth middleware)
-export const getStyleById = async (req, res) => {
-  try {
-    const style = await Style.findById(req.params.id); // .populate('clients') if needed
-    if (style) {
-      res.json(style);
-    } else {
-      res.status(404).json({ message: 'Style not found' });
-    }
-  } catch (error) {
-    console.error(error);
-    if (error.kind === 'ObjectId') {
-        return res.status(404).json({ message: 'Style not found' });
-    }
-    res.status(500).json({ message: 'Server Error: Could not fetch style' });
+export const getStyleById = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
   }
-};
+  const style = await Style.findById(req.params.id);
 
-// @desc    Update a style (name, category, description - image update is separate or more complex)
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
+  }
+  res.json(style);
+});
+
+// @desc    Update a style
 // @route   PUT /api/v1/styles/:id
 // @access  Private (TODO: Add auth middleware)
-export const updateStyle = async (req, res) => {
+export const updateStyle = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
+  }
+  const style = await Style.findById(req.params.id);
+
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
+  }
+
+  const { name, category, description } = req.body;
+  const oldPublicId = style.cloudinaryPublicId;
+  let newImageUploadResult;
+
   try {
-    const { name, category, description } = req.body;
-    const style = await Style.findById(req.params.id);
-
-    if (!style) {
-      return res.status(404).json({ message: 'Style not found' });
-    }
-
-    // For image update, you'd need to handle file upload and delete old image from Cloudinary
     if (req.file) {
-        // Delete old image from Cloudinary
-        if (style.cloudinaryPublicId) {
-            await cloudinary.uploader.destroy(style.cloudinaryPublicId);
-        }
-        // Upload new image
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'fashion_styles',
-        });
-        style.imageUrl = result.secure_url;
-        style.cloudinaryPublicId = result.public_id;
-        // await fs.unlink(req.file.path); // if multer saves locally
+      newImageUploadResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
+      style.imageUrl = newImageUploadResult.secure_url;
+      style.cloudinaryPublicId = newImageUploadResult.public_id;
     }
 
     style.name = name || style.name;
     style.category = category || style.category;
-    style.description = description || style.description;
+    style.description = description === undefined ? style.description : description;
 
     const updatedStyle = await style.save();
+
+    if (req.file && oldPublicId && oldPublicId !== updatedStyle.cloudinaryPublicId) {
+      await attemptCloudinaryDelete(oldPublicId);
+    }
+
     res.json(updatedStyle);
   } catch (error) {
-    console.error('Error updating style:', error);
-     if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
+    if (newImageUploadResult && newImageUploadResult.public_id) {
+      await attemptCloudinaryDelete(newImageUploadResult.public_id);
     }
-    if (error.kind === 'ObjectId') {
-        return res.status(404).json({ message: 'Style not found' });
-    }
-    res.status(500).json({ message: 'Server Error: Could not update style' });
+    return next(error);
   }
-};
+});
 
 // @desc    Delete a style
 // @route   DELETE /api/v1/styles/:id
 // @access  Private (TODO: Add auth middleware)
-export const deleteStyle = async (req, res) => {
-  try {
-    const style = await Style.findById(req.params.id);
-
-    if (!style) {
-      return res.status(404).json({ message: 'Style not found' });
-    }
-
-    // Delete image from Cloudinary
-    if (style.cloudinaryPublicId) {
-      await cloudinary.uploader.destroy(style.cloudinaryPublicId);
-    }
-
-    // Remove style reference from any clients
-    await Client.updateMany(
-      { styles: style._id },
-      { $pull: { styles: style._id } }
-    );
-
-    await style.deleteOne();
-    res.json({ message: 'Style removed' });
-  } catch (error) {
-    console.error(error);
-    if (error.kind === 'ObjectId') {
-        return res.status(404).json({ message: 'Style not found' });
-    }
-    res.status(500).json({ message: 'Server Error: Could not delete style' });
+export const deleteStyle = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
   }
-};
+  const style = await Style.findById(req.params.id);
+
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
+  }
+
+  const publicIdToDelete = style.cloudinaryPublicId;
+
+  await Client.updateMany(
+    { styles: style._id },
+    { $pull: { styles: style._id } }
+  );
+
+  await style.deleteOne();
+
+  if (publicIdToDelete) {
+    await attemptCloudinaryDelete(publicIdToDelete);
+  }
+
+  res.json({ message: 'Style removed successfully' });
+});
