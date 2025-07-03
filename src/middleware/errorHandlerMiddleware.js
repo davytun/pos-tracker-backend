@@ -1,4 +1,4 @@
-import AppError from '../utils/customErrors.js';
+import { AppError } from '../utils/customErrors.js'; // Changed to named import
 import dotenv from 'dotenv';
 
 dotenv.config();
