@@ -50,6 +50,12 @@ const clientSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for frequently queried fields
+clientSchema.index({ name: 1 }); // For queries on name. Regex can use this.
+clientSchema.index({ eventType: 1 }); // For queries on eventType. Regex can use this.
+clientSchema.index({ phone: 1 }); // If phone lookups become common (e.g., for uniqueness or search)
+clientSchema.index({ styles: 1 }); // Index for the styles array for $pull operations
+
 // Middleware to update `updatedAt` field before each save
 clientSchema.pre('save', function (next) {
   this.updatedAt = Date.now();

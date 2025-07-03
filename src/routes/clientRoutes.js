@@ -8,8 +8,9 @@ import {
   linkStyleToClient,
   getClientStyles
 } from '../controllers/clientController.js';
-import protect from '../middleware/authMiddleware.js'; // Assuming auth middleware is ready
-
+import protect from '../middleware/authMiddleware.js';
+import { body, param, query } from 'express-validator';
+import { handleValidationErrors } from '../middleware/validationResultHandler.js';
 
 const router = express.Router();
 
@@ -43,7 +44,6 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Client'
  *       400:
  *         description: Invalid input or validation error (e.g., missing name/phone)
-
  *         content:
  *           application/json:
  *             schema:
@@ -71,7 +71,6 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         description: Filter clients by name (case-insensitive, partial match)
-
  *       - in: query
  *         name: eventType
  *         schema:
@@ -100,8 +99,33 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.route('/')
-  .post(protect, createClient)
-  .get(protect, getClients);
+  .post(
+    protect,
+    [
+      body('name').trim().notEmpty().withMessage('Client name is required.')
+        .isLength({ min: 2 }).withMessage('Client name must be at least 2 characters.')
+        .escape(),
+      body('phone').notEmpty().withMessage('Phone number is required.')
+        .isString().withMessage('Phone number must be a string.')
+        .escape(),
+      body('email').optional({ checkFalsy: true }).isEmail().withMessage('Provide a valid email address.').normalizeEmail(),
+      body('eventType').optional().isString().trim().escape(),
+      body('measurements').optional().isArray().withMessage('Measurements must be an array.'),
+      body('measurements.*.name').if(body('measurements').exists()).notEmpty().withMessage('Measurement name is required.').trim().escape(),
+      body('measurements.*.value').if(body('measurements').exists()).notEmpty().withMessage('Measurement value is required.').trim().escape(),
+    ],
+    handleValidationErrors,
+    createClient
+  )
+  .get(
+    protect,
+    [
+      query('name').optional().isString().trim(),
+      query('eventType').optional().isString().trim(),
+    ],
+    handleValidationErrors,
+    getClients
+  );
 
 /**
  * @swagger
@@ -160,7 +184,7 @@ router.route('/')
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ClientInput' # Can reuse or create a specific update schema
+ *             $ref: '#/components/schemas/ClientInput'
  *     responses:
  *       200:
  *         description: Client updated successfully
@@ -214,13 +238,13 @@ router.route('/')
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Client removed
+ *                   example: Client removed successfully
  *       401:
  *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/Error/third_party AI providersResponse'
  *       404:
  *         description: Client not found
  *         content:
@@ -235,9 +259,41 @@ router.route('/')
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.route('/:id')
-  .get(protect, getClientById)
-  .put(protect, updateClient)
-  .delete(protect, deleteClient);
+  .get(
+    protect,
+    [
+      param('id').isMongoId().withMessage('Invalid client ID format.'),
+    ],
+    handleValidationErrors,
+    getClientById
+  )
+  .put(
+    protect,
+    [
+      param('id').isMongoId().withMessage('Invalid client ID format.'),
+      body('name').optional().trim().notEmpty().withMessage('Client name cannot be empty if provided.')
+        .isLength({ min: 2 }).withMessage('Client name must be at least 2 characters if provided.')
+        .escape(),
+      body('phone').optional().notEmpty().withMessage('Phone number cannot be empty if provided.')
+        .isString().withMessage('Phone number must be a string.')
+        .escape(),
+      body('email').optional({ checkFalsy: true }).isEmail().withMessage('Provide a valid email address if updating.').normalizeEmail(),
+      body('eventType').optional().isString().trim().escape(),
+      body('measurements').optional().isArray().withMessage('Measurements must be an array if provided.'),
+      body('measurements.*.name').if(body('measurements').exists()).notEmpty().withMessage('Measurement name is required if measurements are provided.').trim().escape(),
+      body('measurements.*.value').if(body('measurements').exists()).notEmpty().withMessage('Measurement value is required if measurements are provided.').trim().escape(),
+    ],
+    handleValidationErrors,
+    updateClient
+  )
+  .delete(
+    protect,
+    [
+      param('id').isMongoId().withMessage('Invalid client ID format.'),
+    ],
+    handleValidationErrors,
+    deleteClient
+  );
 
 /**
  * @swagger
@@ -311,7 +367,7 @@ router.route('/:id')
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Style' # Assumes populated styles
+ *                 $ref: '#/components/schemas/Style'
  *       401:
  *         description: Not authorized
  *         content:
@@ -332,7 +388,22 @@ router.route('/:id')
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.route('/:clientId/styles')
-  .post(protect, linkStyleToClient)
-  .get(protect, getClientStyles);
+  .post(
+    protect,
+    [
+      param('clientId').isMongoId().withMessage('Invalid client ID format.'),
+      body('styleId').notEmpty().withMessage('styleId is required.').isMongoId().withMessage('Invalid style ID format.'),
+    ],
+    handleValidationErrors,
+    linkStyleToClient
+  )
+  .get(
+    protect,
+    [
+      param('clientId').isMongoId().withMessage('Invalid client ID format.'),
+    ],
+    handleValidationErrors,
+    getClientStyles
+  );
 
 export default router;

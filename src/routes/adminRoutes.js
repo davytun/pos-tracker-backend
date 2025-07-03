@@ -71,7 +71,6 @@ router.get('/stats', getAdminStats);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/User' # User schema without password
-
  *       401:
  *         description: Not authorized
  *         content:

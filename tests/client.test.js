@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../src/server.js';
 import Client from '../src/models/ClientModel.js';
-import User from '../src/models/UserModel.js'; // Needed for getting a token
+import User from '../src/models/UserModel.js';
 import mongoose from 'mongoose';
 
 describe('Client API Endpoints', () => {
@@ -13,20 +13,31 @@ describe('Client API Endpoints', () => {
   };
   let testClientId;
 
-  const sampleClientData = {
-    name: 'Alice Wonderland',
-    phone: '123-456-7890',
+  const rawSampleClientData = {
+    name: 'Alice <Wonderland>',
+    phone: '123<->456<->7890',
     email: 'alice@example.com',
-    eventType: 'Birthday Party',
+    eventType: 'Birthday Party <Fun>',
     measurements: [
-      { name: 'Bust', value: '34 inches' },
-      { name: 'Waist', value: '28 inches' },
+      { name: 'Bust <Size>', value: '34 <inches>' },
+      { name: 'Waist', value: '28 <inches> Tight' },
+    ],
+  };
+
+  const expectedEscapedClientData = {
+    name: 'Alice <Wonderland>',
+    phone: '123<->456<->7890',
+    email: 'alice@example.com',
+    eventType: 'Birthday Party <Fun>',
+    measurements: [
+      { name: 'Bust <Size>', value: '34 <inches>' },
+      { name: 'Waist', value: '28 <inches> Tight' },
     ],
   };
 
   beforeAll(async () => {
     // Register and login user to get token
-    await User.deleteMany({}); // Clear users first
+    await User.deleteMany({});
     await request(app).post('/api/v1/auth/register').send(testUser);
     const loginRes = await request(app)
       .post('/api/v1/auth/login')
@@ -38,38 +49,37 @@ describe('Client API Endpoints', () => {
     await Client.deleteMany({});
     // Create a client to be used in GET by ID, PUT, DELETE tests
     const res = await request(app)
-        .post('/api/v1/clients')
-        .set('Authorization', `Bearer ${token}`)
-        .send(sampleClientData);
+      .post('/api/v1/clients')
+      .set('Authorization', `Bearer ${token}`)
+      .send(rawSampleClientData);
     if (res.body && res.body._id) {
-        testClientId = res.body._id;
+      testClientId = res.body._id;
     } else {
-        // If the initial client creation fails, log it. Tests might fail.
-        console.error("Failed to create initial client for tests:", res.body);
-        // Fallback in case the above post fails or does not return _id as expected
-        const client = new Client(sampleClientData);
-        const savedClient = await client.save();
-        testClientId = savedClient._id.toString();
-
+      console.error("Failed to create initial client for tests:", res.body, res.status);
+      const client = new Client(expectedEscapedClientData);
+      const savedClient = await client.save();
+      testClientId = savedClient._id.toString();
     }
   });
 
-
   describe('POST /api/v1/clients', () => {
-    it('should create a new client successfully', async () => {
-      const newClient = { ...sampleClientData, name: 'Bob The Builder', phone: '987-654-3210' };
+    it('should create a new client successfully and escape HTML entities', async () => {
       const res = await request(app)
         .post('/api/v1/clients')
         .set('Authorization', `Bearer ${token}`)
-        .send(newClient);
+        .send(rawSampleClientData);
       expect(res.statusCode).toEqual(201);
       expect(res.body).toHaveProperty('_id');
-      expect(res.body.name).toBe(newClient.name);
-      expect(res.body.measurements.length).toBe(2);
+      expect(res.body.name).toBe(expectedEscapedClientData.name);
+      expect(res.body.phone).toBe(expectedEscapedClientData.phone);
+      expect(res.body.eventType).toBe(expectedEscapedClientData.eventType);
+      expect(res.body.measurements).toEqual(expect.arrayContaining(
+        expectedEscapedClientData.measurements.map(m => expect.objectContaining(m))
+      ));
     });
 
     it('should fail to create a client without required fields (name)', async () => {
-      const { name, ...incompleteClient } = sampleClientData; // Remove name
+      const { name, ...incompleteClient } = rawSampleClientData;
       const res = await request(app)
         .post('/api/v1/clients')
         .set('Authorization', `Bearer ${token}`)
@@ -78,8 +88,8 @@ describe('Client API Endpoints', () => {
       expect(res.body.message).toBe('Name and phone are required');
     });
 
-     it('should fail to create a client without required fields (phone)', async () => {
-      const { phone, ...incompleteClient } = sampleClientData; // Remove phone
+    it('should fail to create a client without required fields (phone)', async () => {
+      const { phone, ...incompleteClient } = rawSampleClientData;
       const res = await request(app)
         .post('/api/v1/clients')
         .set('Authorization', `Bearer ${token}`)
@@ -87,61 +97,66 @@ describe('Client API Endpoints', () => {
       expect(res.statusCode).toEqual(400);
       expect(res.body.message).toBe('Name and phone are required');
     });
-
 
     it('should fail to create a client without auth token', async () => {
-        const res = await request(app)
-            .post('/api/v1/clients')
-            .send(sampleClientData);
-        expect(res.statusCode).toEqual(401);
+      const res = await request(app)
+        .post('/api/v1/clients')
+        .send(rawSampleClientData);
+      expect(res.statusCode).toEqual(401);
     });
   });
 
   describe('GET /api/v1/clients', () => {
-    it('should get all clients', async () => {
+    it('should get all clients, including the one with escaped data', async () => {
       const res = await request(app)
         .get('/api/v1/clients')
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
       expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThanOrEqual(1); // Since one is created in beforeEach
-      expect(res.body[0].name).toBe(sampleClientData.name);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      const foundClient = res.body.find(client => client._id === testClientId);
+      expect(foundClient).toBeDefined();
+      expect(foundClient.name).toBe(expectedEscapedClientData.name);
+      expect(foundClient.eventType).toBe(expectedEscapedClientData.eventType);
     });
 
-    it('should filter clients by name', async () => {
-        const res = await request(app)
-          .get('/api/v1/clients?name=Alice')
-          .set('Authorization', `Bearer ${token}`);
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.length).toBe(1);
-        expect(res.body[0].name).toContain('Alice');
-      });
+    it('should filter clients by name (using escaped name for query)', async () => {
+      const res = await request(app)
+        .get('/api/v1/clients?name=Alice%20%3CWonderland%3E')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].name).toBe(expectedEscapedClientData.name);
+    });
 
-      it('should filter clients by eventType', async () => {
-        const res = await request(app)
-          .get('/api/v1/clients?eventType=Birthday')
-          .set('Authorization', `Bearer ${token}`);
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.length).toBe(1);
-        expect(res.body[0].eventType).toContain('Birthday');
-      });
-
+    it('should filter clients by eventType', async () => {
+      const res = await request(app)
+        .get('/api/v1/clients?eventType=Birthday%20%3CFun%3E')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].eventType).toBe(expectedEscapedClientData.eventType);
+    });
 
     it('should fail to get clients without auth token', async () => {
-        const res = await request(app).get('/api/v1/clients');
-        expect(res.statusCode).toEqual(401);
+      const res = await request(app).get('/api/v1/clients');
+      expect(res.statusCode).toEqual(401);
     });
   });
 
   describe('GET /api/v1/clients/:id', () => {
     it('should get a single client by ID', async () => {
-      expect(testClientId).toBeDefined(); // Ensure testClientId is set
+      expect(testClientId).toBeDefined();
       const res = await request(app)
         .get(`/api/v1/clients/${testClientId}`)
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
       expect(res.body).toHaveProperty('_id', testClientId);
-      expect(res.body.name).toBe(sampleClientData.name);
+      expect(res.body.name).toBe(expectedEscapedClientData.name);
+      expect(res.body.eventType).toBe(expectedEscapedClientData.eventType);
+      expect(res.body.measurements).toEqual(expect.arrayContaining(
+        expectedEscapedClientData.measurements.map(m => expect.objectContaining(m))
+      ));
     });
 
     it('should return 404 for a non-existent client ID', async () => {
@@ -153,27 +168,29 @@ describe('Client API Endpoints', () => {
       expect(res.body.message).toBe('Client not found');
     });
 
-    it('should return 404 for an invalid client ID format', async () => {
-        const invalidId = 'invalid-id-format';
-        const res = await request(app)
-          .get(`/api/v1/clients/${invalidId}`)
-          .set('Authorization', `Bearer ${token}`);
-        expect(res.statusCode).toEqual(404); // Mongoose casting error for ObjectId
-        expect(res.body.message).toBe('Client not found');
-      });
+    it('should return 400 for an invalid client ID format', async () => {
+      const invalidId = 'invalid-id-format';
+      const res = await request(app)
+        .get(`/api/v1/clients/${invalidId}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.message).toBe('Invalid client ID format.');
+    });
   });
 
   describe('PUT /api/v1/clients/:id', () => {
-    it('should update a client successfully', async () => {
+    it('should update a client successfully, escaping new HTML entities', async () => {
       expect(testClientId).toBeDefined();
-      const updatedData = { name: 'Alicia Keys', phone: '111-222-3333' };
+      const rawUpdateData = { name: 'Alicia <Keys>', phone: '111<->222<->3333', eventType: 'Award Show <VIP>' };
+      const expectedEscapedUpdateData = { name: 'Alicia <Keys>', phone: '111<->222<->3333', eventType: 'Award Show <VIP>' };
       const res = await request(app)
         .put(`/api/v1/clients/${testClientId}`)
         .set('Authorization', `Bearer ${token}`)
-        .send(updatedData);
+        .send(rawUpdateData);
       expect(res.statusCode).toEqual(200);
-      expect(res.body.name).toBe(updatedData.name);
-      expect(res.body.phone).toBe(updatedData.phone);
+      expect(res.body.name).toBe(expectedEscapedUpdateData.name);
+      expect(res.body.phone).toBe(expectedEscapedUpdateData.phone);
+      expect(res.body.eventType).toBe(expectedEscapedUpdateData.eventType);
     });
 
     it('should return 404 when trying to update a non-existent client', async () => {
@@ -193,7 +210,7 @@ describe('Client API Endpoints', () => {
         .delete(`/api/v1/clients/${testClientId}`)
         .set('Authorization', `Bearer ${token}`);
       expect(res.statusCode).toEqual(200);
-      expect(res.body.message).toBe('Client removed');
+      expect(res.body.message).toBe('Client removed successfully');
 
       // Verify client is actually deleted
       const getRes = await request(app)
@@ -211,43 +228,31 @@ describe('Client API Endpoints', () => {
     });
   });
 
-  // Tests for linking styles will require a Style model and an existing style.
-  // These can be added once the Style endpoints and model are also being tested.
-  // For now, we'll skip detailed tests for /:clientId/styles routes or mock them.
-
   describe('POST /api/v1/clients/:clientId/styles', () => {
     it('should link a style to a client (mocked styleId)', async () => {
-        const mockStyleId = new mongoose.Types.ObjectId().toString();
-        // We are not creating a real style, just testing the linking mechanism.
-        // The controller has a TODO to validate styleId, so this might fail if that's implemented strictly.
-        const res = await request(app)
-            .post(`/api/v1/clients/${testClientId}/styles`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({ styleId: mockStyleId });
-
-        expect(res.statusCode).toEqual(200); // or 201 if you prefer for linking
-        expect(res.body.styles).toContain(mockStyleId);
+      const mockStyleId = new mongoose.Types.ObjectId().toString();
+      const res = await request(app)
+        .post(`/api/v1/clients/${testClientId}/styles`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ styleId: mockStyleId });
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.styles).toContain(mockStyleId);
     });
   });
 
   describe('GET /api/v1/clients/:clientId/styles', () => {
     it('should get styles linked to a client', async () => {
-        const mockStyleId = new mongoose.Types.ObjectId().toString();
-        // Link a style first
-        await request(app)
-            .post(`/api/v1/clients/${testClientId}/styles`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({ styleId: mockStyleId });
-
-        const res = await request(app)
-            .get(`/api/v1/clients/${testClientId}/styles`)
-            .set('Authorization', `Bearer ${token}`);
-
-        expect(res.statusCode).toEqual(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        // In the test environment, populate might not work as expected without real Style documents.
-        // The response will contain style IDs.
-        expect(res.body).toContain(mockStyleId);
+      const mockStyleId = new mongoose.Types.ObjectId().toString();
+      await request(app)
+        .post(`/api/v1/clients/${testClientId}/styles`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ styleId: mockStyleId });
+      const res = await request(app)
+        .get(`/api/v1/clients/${testClientId}/styles`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.statusCode).toEqual(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toContain(mockStyleId);
     });
   });
 
