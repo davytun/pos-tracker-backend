@@ -4,10 +4,9 @@ import { BadRequestError, NotFoundError, ConflictError } from '../utils/customEr
 import asyncHandler from '../utils/asyncHandler.js';
 import mongoose from 'mongoose';
 
-
 // @desc    Create a new client
 // @route   POST /api/v1/clients
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const createClient = asyncHandler(async (req, res, next) => {
   const { name, phone, email, eventType, measurements } = req.body;
 
@@ -29,7 +28,7 @@ export const createClient = asyncHandler(async (req, res, next) => {
 
 // @desc    Get all clients
 // @route   GET /api/v1/clients
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const getClients = asyncHandler(async (req, res, next) => {
   const { name, eventType } = req.query;
   const queryObject = {};
@@ -47,10 +46,10 @@ export const getClients = asyncHandler(async (req, res, next) => {
 
 // @desc    Get a single client by ID
 // @route   GET /api/v1/clients/:id
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const getClientById = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
+    return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
   }
   const client = await Client.findById(req.params.id).populate('styles');
 
@@ -62,7 +61,7 @@ export const getClientById = asyncHandler(async (req, res, next) => {
 
 // @desc    Update a client
 // @route   PUT /api/v1/clients/:id
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const updateClient = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
@@ -86,7 +85,7 @@ export const updateClient = asyncHandler(async (req, res, next) => {
 
 // @desc    Delete a client
 // @route   DELETE /api/v1/clients/:id
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const deleteClient = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
@@ -103,7 +102,7 @@ export const deleteClient = asyncHandler(async (req, res, next) => {
 
 // @desc    Link a style to a client
 // @route   POST /api/v1/clients/:clientId/styles
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const linkStyleToClient = asyncHandler(async (req, res, next) => {
   const { clientId } = req.params;
   const { styleId } = req.body;
@@ -122,7 +121,7 @@ export const linkStyleToClient = asyncHandler(async (req, res, next) => {
 
   const styleExists = await Style.findById(styleId);
   if (!styleExists) {
-      return next(new NotFoundError(`Style not found with id ${styleId}`));
+    return next(new NotFoundError(`Style not found with id ${styleId}`));
   }
 
   if (client.styles.map(id => id.toString()).includes(styleId.toString())) {
@@ -138,7 +137,7 @@ export const linkStyleToClient = asyncHandler(async (req, res, next) => {
 
 // @desc    Get all styles for a specific client
 // @route   GET /api/v1/clients/:clientId/styles
-// @access  Private
+// @access  Private (TODO: Add auth middleware)
 export const getClientStyles = asyncHandler(async (req, res, next) => {
   const { clientId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(clientId)) {

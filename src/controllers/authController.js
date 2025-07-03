@@ -35,9 +35,8 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     isAdmin: isAdmin || false,
   });
 
-  // If user creation somehow fails without throwing an error handled by mongoose (unlikely with create)
   if (!user) {
-    return next(new AppError('Invalid user data, user not created', 500)); // General server error
+    return next(new BadRequestError('Invalid user data, user not created'));
   }
 
   res.status(201).json({
@@ -109,7 +108,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
     user.password = req.body.password; // Hashing is handled by pre-save middleware
   }
 
-  const updatedUser = await user.save(); // This can throw Mongoose validation errors
+  const updatedUser = await user.save();
 
   res.json({
     _id: updatedUser._id,
