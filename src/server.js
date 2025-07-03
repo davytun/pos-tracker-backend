@@ -27,8 +27,15 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS - Configure properly for production
-app.use(cors()); // For now, open. In prod, specify origins: app.use(cors({ origin: process.env.FRONTEND_URL }))
+// Enable CORS
+const corsOptions = {
+  origin: 'https://fittingz-frontend.vercel.app', // Specific origin for your frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  credentials: true, // If you need to send cookies or authorization headers
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable pre-flight requests for all routes
 
 // Rate limiting
 const limiter = rateLimit({
