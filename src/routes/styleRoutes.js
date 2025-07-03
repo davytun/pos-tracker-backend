@@ -6,9 +6,8 @@ import {
   updateStyle,
   deleteStyle,
 } from '../controllers/styleController.js';
-import upload from '../middleware/uploadMiddleware.js'; // For handling image uploads
-import protect from '../middleware/authMiddleware.js';   // Assuming auth middleware is ready
-
+import upload from '../middleware/uploadMiddleware.js';
+import protect from '../middleware/authMiddleware.js';
 import { body, param, query } from 'express-validator';
 import { handleValidationErrors } from '../middleware/validationResultHandler.js';
 
@@ -108,22 +107,14 @@ const router = express.Router();
 router.route('/')
   .post(
     protect,
-    upload.single('styleImage'), // Multer middleware for file upload
+    upload.single('styleImage'),
     [
       body('name').trim().notEmpty().withMessage('Style name is required.').escape(),
       body('category').trim().notEmpty().withMessage('Category is required.')
         .isIn(['Traditional', 'Wedding', 'Casual', 'Corporate', 'Evening Wear', 'Other'])
         .withMessage('Invalid category selected.')
-        .escape(), // Category is from a fixed list, but escape for good measure
+        .escape(),
       body('description').optional().isString().trim().escape(),
-      // Validation for req.file (the uploaded image) can be done here or in controller
-      // For example, check if file exists after multer processing:
-      // body('styleImage').custom((value, { req }) => {
-      //   if (!req.file) {
-      //     throw new Error('Style image is required.');
-      //   }
-      //   return true;
-      // })
     ],
     handleValidationErrors,
     createStyle
@@ -196,7 +187,7 @@ router.route('/')
  *       content:
  *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/StyleUpdateInput' # References the schema for text fields and optional image
+ *             $ref: '#/components/schemas/StyleUpdateInput'
  *     responses:
  *       200:
  *         description: Style updated successfully
@@ -250,7 +241,7 @@ router.route('/')
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Style removed
+ *                   example: Style removed successfully
  *       401:
  *         description: Not authorized
  *         content:
@@ -281,7 +272,7 @@ router.route('/:id')
   )
   .put(
     protect,
-    upload.single('styleImage'), // Multer for potential file update
+    upload.single('styleImage'),
     [
       param('id').isMongoId().withMessage('Invalid style ID format.'),
       body('name').optional().trim().notEmpty().withMessage('Style name cannot be empty if provided.').escape(),

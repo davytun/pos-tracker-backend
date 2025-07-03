@@ -2,7 +2,6 @@ import User from '../models/UserModel.js';
 import Client from '../models/ClientModel.js';
 import Style from '../models/StyleModel.js';
 import asyncHandler from '../utils/asyncHandler.js';
-// No specific custom errors needed here yet unless we add more complex logic
 
 // @desc    Get summary statistics for admin dashboard
 // @route   GET /api/v1/admin/stats

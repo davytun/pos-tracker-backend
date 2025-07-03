@@ -1,8 +1,8 @@
 import User from '../models/UserModel.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/customErrors.js'; // Import custom errors
-import asyncHandler from '../utils/asyncHandler.js'; // Import asyncHandler
+import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/customErrors.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 dotenv.config();
 
@@ -35,9 +35,8 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     isAdmin: isAdmin || false,
   });
 
-  // If user creation somehow fails without throwing an error handled by mongoose (unlikely with create)
   if (!user) {
-    return next(new AppError('Invalid user data, user not created', 500)); // General server error
+    return next(new BadRequestError('Invalid user data, user not created'));
   }
 
   res.status(201).json({
@@ -104,12 +103,12 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
   }
 
   user.name = req.body.name || user.name;
-  user.email = req.body.email || user.email; // Note: email updates might need re-verification in a full system
+  user.email = req.body.email || user.email;
   if (req.body.password) {
     user.password = req.body.password; // Hashing is handled by pre-save middleware
   }
 
-  const updatedUser = await user.save(); // This can throw Mongoose validation errors
+  const updatedUser = await user.save();
 
   res.json({
     _id: updatedUser._id,
