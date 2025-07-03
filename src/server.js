@@ -23,9 +23,9 @@ app.set('trust proxy', 1); // Trust first proxy for X-Forwarded-For
 // Set security HTTP headers
 app.use(helmet());
 
-// Body parser
-app.use(express.json({ limit: '500kb' })); // Increased limit for JSON payloads
-app.use(express.urlencoded({ extended: true, limit: '500kb' })); // For URL-encoded data
+// Body parser - Using defaults
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS - Configure properly for production
 app.use(cors()); // For now, open. In prod, specify origins: app.use(cors({ origin: process.env.FRONTEND_URL }))
