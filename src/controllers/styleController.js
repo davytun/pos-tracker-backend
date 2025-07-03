@@ -1,7 +1,5 @@
 import Style from '../models/StyleModel.js';
 import Client from '../models/ClientModel.js';
-// import cloudinary from '../config/cloudinaryConfig.js'; // Now handled by service
-// import fs from 'fs/promises'; // Now handled by service
 import { uploadImageToCloudinary, deleteImageFromCloudinary, attemptCloudinaryDelete } from '../services/styleService.js';
 import { BadRequestError, NotFoundError, AppError } from '../utils/customErrors.js';
 import asyncHandler from '../utils/asyncHandler.js';

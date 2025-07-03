@@ -1,154 +1,164 @@
+import Style from '../models/StyleModel.js';
 import Client from '../models/ClientModel.js';
-import Style from '../models/StyleModel.js'; // Needed for validating styleId
-import { BadRequestError, NotFoundError, ConflictError } from '../utils/customErrors.js';
+import { uploadImageToCloudinary, deleteImageFromCloudinary, attemptCloudinaryDelete } from '../services/styleService.js';
+import { BadRequestError, NotFoundError, AppError } from '../utils/customErrors.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import mongoose from 'mongoose';
 
 
-// @desc    Create a new client
-// @route   POST /api/v1/clients
+// @desc    Upload a new style image and create style record
+// @route   POST /api/v1/styles
 // @access  Private
-export const createClient = asyncHandler(async (req, res, next) => {
-  const { name, phone, email, eventType, measurements } = req.body;
+export const createStyle = asyncHandler(async (req, res, next) => {
+  const { name, category, description } = req.body;
 
-  if (!name || !phone) {
-    return next(new BadRequestError('Name and phone are required fields'));
+  if (!name || !category) {
+    return next(new BadRequestError('Name and category are required fields'));
+  }
+  if (!req.file) {
+    return next(new BadRequestError('Style image is required'));
   }
 
-  const client = new Client({
-    name,
-    phone,
-    email,
-    eventType,
-    measurements,
-  });
+  let uploadedImageResult;
+  try {
+    // Service handles upload and local file cleanup
+    uploadedImageResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
 
-  const createdClient = await client.save(); // Mongoose validation errors will be caught by global handler
-  res.status(201).json(createdClient);
+    const style = new Style({
+      name,
+      category,
+      description,
+      imageUrl: uploadedImageResult.secure_url,
+      cloudinaryPublicId: uploadedImageResult.public_id,
+    });
+
+    const createdStyle = await style.save();
+    res.status(201).json(createdStyle);
+
+  } catch (error) {
+    // If Cloudinary upload succeeded but DB save failed, attempt to delete from Cloudinary
+    if (uploadedImageResult && uploadedImageResult.public_id && !(error instanceof AppError && error.statusCode < 500) ) {
+        // Only delete if it's a server error or DB error, not a client-side validation error that might have prevented the attempt
+        await attemptCloudinaryDelete(uploadedImageResult.public_id);
+    }
+    // The uploadImageToCloudinary service already tries to unlink the temp file.
+    // If the error happened before or during uploadImageToCloudinary, it handles its own cleanup.
+    return next(error);
+  }
 });
 
-// @desc    Get all clients
-// @route   GET /api/v1/clients
+// @desc    Get all styles
+// @route   GET /api/v1/styles
 // @access  Private
-export const getClients = asyncHandler(async (req, res, next) => {
-  const { name, eventType } = req.query;
+export const getStyles = asyncHandler(async (req, res, next) => {
+  const { category, name } = req.query;
   const queryObject = {};
 
+  if (category) {
+    queryObject.category = category;
+  }
   if (name) {
     queryObject.name = { $regex: name, $options: 'i' };
   }
-  if (eventType) {
-    queryObject.eventType = { $regex: eventType, $options: 'i' };
-  }
 
-  const clients = await Client.find(queryObject).populate('styles');
-  res.json(clients);
+  const styles = await Style.find(queryObject);
+  res.json(styles);
 });
 
-// @desc    Get a single client by ID
-// @route   GET /api/v1/clients/:id
+// @desc    Get a single style by ID
+// @route   GET /api/v1/styles/:id
 // @access  Private
-export const getClientById = asyncHandler(async (req, res, next) => {
+export const getStyleById = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
   }
-  const client = await Client.findById(req.params.id).populate('styles');
+  const style = await Style.findById(req.params.id);
 
-  if (!client) {
-    return next(new NotFoundError(`Client not found with id ${req.params.id}`));
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
   }
-  res.json(client);
+  res.json(style);
 });
 
-// @desc    Update a client
-// @route   PUT /api/v1/clients/:id
+// @desc    Update a style
+// @route   PUT /api/v1/styles/:id
 // @access  Private
-export const updateClient = asyncHandler(async (req, res, next) => {
+export const updateStyle = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
   }
-  const client = await Client.findById(req.params.id);
+  const style = await Style.findById(req.params.id);
 
-  if (!client) {
-    return next(new NotFoundError(`Client not found with id ${req.params.id}`));
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
   }
 
-  const { name, phone, email, eventType, measurements } = req.body;
-  client.name = name || client.name;
-  client.phone = phone || client.phone;
-  client.email = email === undefined ? client.email : email; // Allow clearing email
-  client.eventType = eventType === undefined ? client.eventType : eventType;
-  client.measurements = measurements || client.measurements;
+  const { name, category, description } = req.body;
+  const oldPublicId = style.cloudinaryPublicId;
+  let newImageUploadResult;
 
-  const updatedClient = await client.save();
-  res.json(updatedClient);
+  try {
+    if (req.file) {
+      // Service handles upload and local file cleanup
+      newImageUploadResult = await uploadImageToCloudinary(req.file.path, 'fashion_styles');
+      style.imageUrl = newImageUploadResult.secure_url;
+      style.cloudinaryPublicId = newImageUploadResult.public_id;
+    }
+
+    style.name = name || style.name;
+    style.category = category || style.category;
+    style.description = description === undefined ? style.description : description;
+
+    const updatedStyle = await style.save();
+
+    // If a new image was successfully uploaded and DB saved, delete the old one
+    if (req.file && oldPublicId && oldPublicId !== updatedStyle.cloudinaryPublicId) {
+      await attemptCloudinaryDelete(oldPublicId); // Use attempt to not fail the whole op if old img deletion fails
+    }
+
+    res.json(updatedStyle);
+
+  } catch (error) {
+    // If a new image was uploaded (newImageUploadResult exists) but DB save or subsequent logic failed
+    if (newImageUploadResult && newImageUploadResult.public_id) {
+      // Attempt to delete the *newly* uploaded image as it's now orphaned
+      await attemptCloudinaryDelete(newImageUploadResult.public_id);
+    }
+    // The uploadImageToCloudinary service already tries to unlink the temp file.
+    return next(error);
+  }
 });
 
-// @desc    Delete a client
-// @route   DELETE /api/v1/clients/:id
+// @desc    Delete a style
+// @route   DELETE /api/v1/styles/:id
 // @access  Private
-export const deleteClient = asyncHandler(async (req, res, next) => {
+export const deleteStyle = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return next(new BadRequestError(`Invalid client ID: ${req.params.id}`));
+    return next(new BadRequestError(`Invalid style ID: ${req.params.id}`));
   }
-  const client = await Client.findById(req.params.id);
+  const style = await Style.findById(req.params.id);
 
-  if (!client) {
-    return next(new NotFoundError(`Client not found with id ${req.params.id}`));
-  }
-
-  await client.deleteOne();
-  res.json({ message: 'Client removed successfully' });
-});
-
-// @desc    Link a style to a client
-// @route   POST /api/v1/clients/:clientId/styles
-// @access  Private
-export const linkStyleToClient = asyncHandler(async (req, res, next) => {
-  const { clientId } = req.params;
-  const { styleId } = req.body;
-
-  if (!mongoose.Types.ObjectId.isValid(clientId)) {
-    return next(new BadRequestError(`Invalid client ID: ${clientId}`));
-  }
-  if (!styleId || !mongoose.Types.ObjectId.isValid(styleId)) {
-    return next(new BadRequestError('Valid styleId is required'));
+  if (!style) {
+    return next(new NotFoundError(`Style not found with id ${req.params.id}`));
   }
 
-  const client = await Client.findById(clientId);
-  if (!client) {
-    return next(new NotFoundError(`Client not found with id ${clientId}`));
+  const publicIdToDelete = style.cloudinaryPublicId;
+
+  // First, remove style reference from any clients
+  await Client.updateMany(
+    { styles: style._id },
+    { $pull: { styles: style._id } }
+  );
+
+  // Then, delete the style document from DB
+  await style.deleteOne();
+
+  // Finally, attempt to delete the image from Cloudinary
+  // Doing this last means if DB operations fail, we haven't lost the image link yet.
+  // If Cloudinary delete fails, we log it but the primary DB deletion is done.
+  if (publicIdToDelete) {
+    await attemptCloudinaryDelete(publicIdToDelete);
   }
 
-  const styleExists = await Style.findById(styleId);
-  if (!styleExists) {
-      return next(new NotFoundError(`Style not found with id ${styleId}`));
-  }
-
-  if (client.styles.map(id => id.toString()).includes(styleId.toString())) {
-    return next(new ConflictError('Style already linked to this client'));
-  }
-
-  client.styles.push(styleId);
-  await client.save();
-  // Populate styles after saving to return the full style objects
-  const updatedClient = await Client.findById(clientId).populate('styles');
-  res.status(200).json(updatedClient);
-});
-
-// @desc    Get all styles for a specific client
-// @route   GET /api/v1/clients/:clientId/styles
-// @access  Private
-export const getClientStyles = asyncHandler(async (req, res, next) => {
-  const { clientId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(clientId)) {
-    return next(new BadRequestError(`Invalid client ID: ${clientId}`));
-  }
-
-  const client = await Client.findById(clientId).populate('styles');
-
-  if (!client) {
-    return next(new NotFoundError(`Client not found with id ${clientId}`));
-  }
-  res.status(200).json(client.styles);
+  res.json({ message: 'Style removed successfully' });
 });

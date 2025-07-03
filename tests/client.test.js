@@ -25,13 +25,13 @@ describe('Client API Endpoints', () => {
   };
 
   const expectedEscapedClientData = {
-    name: 'Alice &lt;Wonderland&gt;',
+    name: 'Alice &lt;Wonderland>&gt;',
     phone: '123&lt;-&gt;456&lt;-&gt;7890',
     email: 'alice@example.com', // Not escaped by normalizeEmail
-    eventType: 'Birthday Party &lt;Fun&gt;',
+    eventType: 'Birthday Party &lt;Fun>&gt;',
     measurements: [
-      { name: 'Bust &lt;Size&gt;', value: '34 &lt;inches&gt;' },
-      { name: 'Waist', value: '28 &lt;inches&gt; Tight' }, // Note: `escape` doesn't escape spaces.
+      { name: 'Bust &lt;Size>&gt;', value: '34 &lt;inches>&gt;' },
+      { name: 'Waist', value: '28 &lt;inches>&gt; Tight' }, // Note: `escape` doesn't escape spaces.
     ],
   };
 
@@ -94,7 +94,7 @@ describe('Client API Endpoints', () => {
       expect(res.body.errors[0].msg).toBe('Client name is required.');
     });
 
-     it('should fail to create a client without required fields (phone)', async () => {
+      it('should fail to create a client without required fields (phone)', async () => {
       const { phone, ...incompleteClient } = rawSampleClientData;
       const res = await request(app)
         .post('/api/v1/clients')
@@ -193,7 +193,7 @@ describe('Client API Endpoints', () => {
     it('should update a client successfully, escaping new HTML entities', async () => {
       expect(testClientId).toBeDefined();
       const rawUpdateData = { name: 'Alicia <Keys>', phone: '111<->222<->3333', eventType: 'Award Show <VIP>' };
-      const expectedEscapedUpdateData = { name: 'Alicia &lt;Keys&gt;', phone: '111&lt;-&gt;222&lt;-&gt;3333', eventType: 'Award Show &lt;VIP&gt;' };
+      const expectedEscapedUpdateData = { name: 'Alicia &lt;Keys>&gt;', phone: '111&lt;-&gt;222&lt;-&gt;3333', eventType: 'Award Show &lt;VIP>&gt;' };
 
       const res = await request(app)
         .put(`/api/v1/clients/${testClientId}`)

@@ -110,7 +110,6 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
   }
 
   const updatedUser = await user.save(); // This can throw Mongoose validation errors
-
   res.json({
     _id: updatedUser._id,
     name: updatedUser.name,

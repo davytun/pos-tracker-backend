@@ -2,13 +2,20 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit'; // Import rate-limit
+import rateLimit from 'express-rate-limit'; 
 import connectDB from './config/db.js';
+
 // Import routes
 import clientRoutes from './routes/clientRoutes.js';
 import styleRoutes from './routes/styleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import adminRoutes from './routes/adminRoutes.js'; // Import admin routes
+import adminRoutes from './routes/adminRoutes.js';
+
+// Import Swagger and error handling
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swaggerConfig.js';
+import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
+
 
 // Load env vars
 dotenv.config();
@@ -25,7 +32,8 @@ app.use(helmet());
 app.use(express.json({ limit: '10kb' })); // Limit request body size
 
 // Enable CORS - Configure properly for production
-app.use(cors()); // For now, open. In prod, specify origins: app.use(cors({ origin: process.env.FRONTEND_URL }))
+// In production, set process.env.FRONTEND_URL to your frontend's URL (e.g., https://fittingz-frontend.vercel.app)
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' })); 
 
 // Rate limiting
 const limiter = rateLimit({
@@ -41,18 +49,12 @@ app.use('/api', limiter); // Apply to all routes starting with /api
 app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/styles', styleRoutes);
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/admin', adminRoutes); // Mount admin routes
-
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swaggerConfig.js';
+app.use('/api/v1/admin', adminRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
-
-// Swagger UI setup
-import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
 
 // Serve Swagger UI at /api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -31,7 +31,7 @@ describe('Auth API Endpoints', () => {
 
     it('should register a user and escape HTML in name', async () => {
       const userWithHtmlName = { ...testUser, email: 'html@example.com', name: 'User <Name>' };
-      const expectedEscapedName = 'User &lt;Name&gt;';
+      const expectedEscapedName = 'User &lt;Name&gt;'; // Expecting HTML entities due to escaping
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send(userWithHtmlName);
@@ -49,11 +49,11 @@ describe('Auth API Endpoints', () => {
     });
 
     it('should fail if required fields are missing', async () => {
-        const res = await request(app)
-            .post('/api/v1/auth/register')
-            .send({ name: 'Test' }); // Missing email and password
-        expect(res.statusCode).toEqual(400);
-        expect(res.body.message).toBe('Please provide name, email, and password');
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ name: 'Test' }); // Missing email and password
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.message).toBe('Please provide name, email, and password');
     });
   });
 
@@ -82,12 +82,12 @@ describe('Auth API Endpoints', () => {
     });
 
     it('should not login a non-existent user', async () => {
-        const res = await request(app)
-          .post('/api/v1/auth/login')
-          .send({ email: 'nonexistent@example.com', password: 'password123' });
-        expect(res.statusCode).toEqual(401); // Or 404 depending on how you want to handle it
-        expect(res.body.message).toBe('Invalid email or password');
-      });
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'nonexistent@example.com', password: 'password123' });
+      expect(res.statusCode).toEqual(401); // Or 404 depending on how you want to handle it
+      expect(res.body.message).toBe('Invalid email or password');
+    });
   });
 
   describe('GET /api/v1/auth/profile', () => {
@@ -139,7 +139,7 @@ describe('Auth API Endpoints', () => {
 
     it('should update user profile and escape HTML in name', async () => {
       const newHtmlName = 'Updated <User Name>';
-      const expectedEscapedName = 'Updated &lt;User Name&gt;';
+      const expectedEscapedName = 'Updated &lt;User Name&gt;'; // Expecting HTML entities due to escaping
       const res = await request(app)
         .put('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${token}`)
@@ -149,20 +149,20 @@ describe('Auth API Endpoints', () => {
     });
 
     it('should update user password successfully', async () => {
-        const newPassword = 'newpassword123';
-        const res = await request(app)
-          .put('/api/v1/auth/profile')
-          .set('Authorization', `Bearer ${token}`)
-          .send({ password: newPassword });
-        expect(res.statusCode).toEqual(200);
+      const newPassword = 'newpassword123';
+      const res = await request(app)
+        .put('/api/v1/auth/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: newPassword });
+      expect(res.statusCode).toEqual(200);
 
-        // Verify new password by logging in
-        const loginRes = await request(app)
-            .post('/api/v1/auth/login')
-            .send({ email: testUser.email, password: newPassword });
-        expect(loginRes.statusCode).toEqual(200);
-        expect(loginRes.body).toHaveProperty('token');
-      });
+      // Verify new password by logging in
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: testUser.email, password: newPassword });
+      expect(loginRes.statusCode).toEqual(200);
+      expect(loginRes.body).toHaveProperty('token');
+    });
 
     it('should not update profile without token', async () => {
       const res = await request(app)
@@ -178,5 +178,5 @@ describe('Auth API Endpoints', () => {
 // This might be redundant if global afterAll in setup.js handles it,
 // but can be useful if running test files individually.
 // afterAll(async () => {
-//   await mongoose.connection.close();
+//    await mongoose.connection.close();
 // });
