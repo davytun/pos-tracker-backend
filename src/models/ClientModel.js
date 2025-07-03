@@ -51,7 +51,6 @@ const clientSchema = new mongoose.Schema(
 );
 
 // Indexes for frequently queried fields
-// clientSchema.index({ name: 'text', eventType: 'text' }); // Text index is for $text operator, not regex
 clientSchema.index({ name: 1 }); // For queries on name. Regex can use this.
 clientSchema.index({ eventType: 1 }); // For queries on eventType. Regex can use this.
 clientSchema.index({ phone: 1 }); // If phone lookups become common (e.g., for uniqueness or search)

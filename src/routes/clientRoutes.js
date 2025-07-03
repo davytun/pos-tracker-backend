@@ -107,7 +107,7 @@ router.route('/')
         .escape(),
       body('phone').notEmpty().withMessage('Phone number is required.')
         .isString().withMessage('Phone number must be a string.')
-        .escape(), // Phone numbers are usually digits/simple chars, but escape for safety
+        .escape(),
       body('email').optional({ checkFalsy: true }).isEmail().withMessage('Provide a valid email address.').normalizeEmail(),
       body('eventType').optional().isString().trim().escape(),
       body('measurements').optional().isArray().withMessage('Measurements must be an array.'),
@@ -123,7 +123,7 @@ router.route('/')
       query('name').optional().isString().trim(),
       query('eventType').optional().isString().trim(),
     ],
-    handleValidationErrors, // Though for GET query params, often direct use in controller is fine too
+    handleValidationErrors,
     getClients
   );
 
@@ -184,7 +184,7 @@ router.route('/')
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/ClientInput' # Can reuse or create a specific update schema
+ *             $ref: '#/components/schemas/ClientInput'
  *     responses:
  *       200:
  *         description: Client updated successfully
@@ -238,13 +238,13 @@ router.route('/')
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Client removed
+ *                   example: Client removed successfully
  *       401:
  *         description: Not authorized
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/Error/third_party AI providersResponse'
  *       404:
  *         description: Client not found
  *         content:
@@ -367,7 +367,7 @@ router.route('/:id')
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Style' # Assumes populated styles
+ *                 $ref: '#/components/schemas/Style'
  *       401:
  *         description: Not authorized
  *         content:
