@@ -1,7 +1,7 @@
 /**
  * @desc Base class for custom application errors
  */
-class AppError extends Error {
+export class AppError extends Error { // Added export here
   constructor(message, statusCode) {
     super(message);
     this.statusCode = statusCode;
@@ -69,4 +69,4 @@ export class UnprocessableEntityError extends AppError {
     }
 }
 
-export default AppError;
+// export default AppError; // Removed default export
