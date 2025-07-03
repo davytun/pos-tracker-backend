@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../src/server.js'; // Adjust path as necessary
+import app from '../src/server.js';
 import User from '../src/models/UserModel.js';
 import mongoose from 'mongoose';
 
@@ -31,7 +31,7 @@ describe('Auth API Endpoints', () => {
 
     it('should register a user and escape HTML in name', async () => {
       const userWithHtmlName = { ...testUser, email: 'html@example.com', name: 'User <Name>' };
-      const expectedEscapedName = 'User <Name>';
+      const expectedEscapedName = 'User &lt;Name&gt;'; // Expecting HTML entities due to escaping
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send(userWithHtmlName);
@@ -139,7 +139,7 @@ describe('Auth API Endpoints', () => {
 
     it('should update user profile and escape HTML in name', async () => {
       const newHtmlName = 'Updated <User Name>';
-      const expectedEscapedName = 'Updated <User Name>';
+      const expectedEscapedName = 'Updated &lt;User Name&gt;'; // Expecting HTML entities due to escaping
       const res = await request(app)
         .put('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${token}`)
@@ -178,5 +178,5 @@ describe('Auth API Endpoints', () => {
 // This might be redundant if global afterAll in setup.js handles it,
 // but can be useful if running test files individually.
 // afterAll(async () => {
-//   await mongoose.connection.close();
+//    await mongoose.connection.close();
 // });

@@ -4,13 +4,18 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
+
+// Import routes
 import clientRoutes from './routes/clientRoutes.js';
 import styleRoutes from './routes/styleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+
+// Import Swagger and error handling
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swaggerConfig.js';
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
+
 
 // Load env vars
 dotenv.config();

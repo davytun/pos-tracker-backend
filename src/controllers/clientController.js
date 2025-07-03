@@ -1,5 +1,5 @@
 import Client from '../models/ClientModel.js';
-import Style from '../models/StyleModel.js';
+import Style from '../models/StyleModel.js'; // Needed for validating styleId
 import { BadRequestError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import mongoose from 'mongoose';
@@ -22,7 +22,7 @@ export const createClient = asyncHandler(async (req, res, next) => {
     measurements,
   });
 
-  const createdClient = await client.save();
+  const createdClient = await client.save(); // Mongoose validation errors will be caught by global handler
   res.status(201).json(createdClient);
 });
 
@@ -75,7 +75,7 @@ export const updateClient = asyncHandler(async (req, res, next) => {
   const { name, phone, email, eventType, measurements } = req.body;
   client.name = name || client.name;
   client.phone = phone || client.phone;
-  client.email = email === undefined ? client.email : email;
+  client.email = email === undefined ? client.email : email; // Allow clearing email
   client.eventType = eventType === undefined ? client.eventType : eventType;
   client.measurements = measurements || client.measurements;
 
@@ -130,6 +130,7 @@ export const linkStyleToClient = asyncHandler(async (req, res, next) => {
 
   client.styles.push(styleId);
   await client.save();
+  // Populate styles after saving to return the full style objects
   const updatedClient = await Client.findById(clientId).populate('styles');
   res.status(200).json(updatedClient);
 });

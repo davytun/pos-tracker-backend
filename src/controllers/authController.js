@@ -1,8 +1,8 @@
 import User from '../models/UserModel.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/customErrors.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/customErrors.js'; // Import custom errors
+import asyncHandler from '../utils/asyncHandler.js'; // Import asyncHandler
 
 dotenv.config();
 
@@ -103,7 +103,7 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
   }
 
   user.name = req.body.name || user.name;
-  user.email = req.body.email || user.email;
+  user.email = req.body.email || user.email; // Note: email updates might need re-verification in a full system
   if (req.body.password) {
     user.password = req.body.password; // Hashing is handled by pre-save middleware
   }
