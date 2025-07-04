@@ -216,7 +216,7 @@ const swaggerDefinition = {
 const options = {
   swaggerDefinition,
   // Paths to files containing OpenAPI definitions (JSDoc comments)
-  apis: ['./src/routes/*.js', './src/controllers/*.js'], // Adjust as needed
+  apis: ['./src/routes/adminRoutes.js'], // Temporarily isolating adminRoutes.js
 };
 
 const swaggerSpec = swaggerJSDoc(options);

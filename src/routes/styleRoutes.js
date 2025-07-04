@@ -140,7 +140,6 @@ router.route('/')
     getStyles
   );
 
-// Temporarily commenting out the entire JSDoc block for /styles/{id} for debugging
 /*
  * @swagger
  * /styles/{id}:
