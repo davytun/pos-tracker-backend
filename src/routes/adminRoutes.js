@@ -20,7 +20,7 @@ router.use(admin);
 
 /**
  * @swagger
- * /admin/stats
+ * /admin/stats:
  *   get:
  *     summary: Get basic system statistics
  *     tags: [Admin]
@@ -56,7 +56,7 @@ router.get('/stats', getAdminStats);
 
 /**
  * @swagger
- * /admin/users
+ * /admin/users:
  *   get:
  *     summary: Get a list of all users (for admin monitoring)
  *     tags: [Admin]

@@ -9,7 +9,7 @@ import connectDB from './config/db.js';
 import clientRoutes from './routes/clientRoutes.js';
 import styleRoutes from './routes/styleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-// import adminRoutes from './routes/adminRoutes.js'; // Temporarily commented out
+import adminRoutes from './routes/adminRoutes.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swaggerConfig.js';
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
@@ -52,18 +52,18 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Mount core routers
-// app.use('/api/v1/clients', clientRoutes); // Temporarily commented out
-// app.use('/api/v1/styles', styleRoutes); // Temporarily commented out
-// app.use('/api/v1/auth', authRoutes); // Temporarily commented out
-// app.use('/api/v1/admin', adminRoutes); // Temporarily commented out
+app.use('/api/v1/clients', clientRoutes); // Temporarily commented out
+app.use('/api/v1/styles', styleRoutes); // Temporarily commented out
+app.use('/api/v1/auth', authRoutes); // Temporarily commented out
+app.use('/api/v1/admin', adminRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-// Swagger UI setup - Temporarily commented out
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Global error handler - should be the LAST middleware
 app.use(errorHandlerMiddleware);
