@@ -14,19 +14,19 @@ const swaggerDefinition = {
       // email: 'support@altair-attic.com', // Replace with actual email
     },
   },
-  servers: [
-    {
-      url: `http://localhost:${process.env.PORT || 5000}/api/v1`,
-      description: 'Development server',
-    },
-    // TODO: Add production server URL once deployed
-    // {
-    //   url: 'https://your-production-api-url.com/api/v1',
-    //   description: 'Production server',
-    // },
-  ],
+  // servers: [
+  //   {
+  //     url: `http://localhost:${process.env.PORT || 5000}/api/v1`,
+  //     description: 'Development server',
+  //   },
+  //   // TODO: Add production server URL once deployed
+  //   // {
+  //   //   url: 'https://your-production-api-url.com/api/v1',
+  //   //   description: 'Production server',
+  //   // },
+  // ],
   components: {
-    securitySchemes: {
+    securitySchemes: { // Keeping securitySchemes for now, as it's small and standard
       bearerAuth: {
         type: 'http',
         scheme: 'bearer',
@@ -34,9 +34,9 @@ const swaggerDefinition = {
         description: 'Enter JWT Bearer token in the format: Bearer {token}',
       },
     },
-    schemas: {
-      // User Schemas
-      User: {
+    // schemas: {
+    //   // User Schemas
+    //   User: {
         type: 'object',
         properties: {
           _id: { type: 'string', example: '60d0fe4f5311236168a109ca' },
@@ -204,7 +204,7 @@ const swaggerDefinition = {
           // You could add more properties like errorCode, details, etc.
         },
       },
-    },
+    // }, // End of commented out schemas
   },
   // security: [ // Global security, can be overridden at path/operation level
   //   {
