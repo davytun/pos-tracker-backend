@@ -10,8 +10,8 @@ import clientRoutes from './routes/clientRoutes.js';
 import styleRoutes from './routes/styleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swaggerConfig.js';
+// import swaggerUi from 'swagger-ui-express'; // Temporarily commented out
+// import swaggerSpec from './config/swaggerConfig.js'; // Temporarily commented out
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
 
 // Load env vars
@@ -62,8 +62,8 @@ app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-// Swagger UI setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger UI setup - Temporarily commented out
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Global error handler - should be the LAST middleware
 app.use(errorHandlerMiddleware);
