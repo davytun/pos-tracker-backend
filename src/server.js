@@ -6,10 +6,10 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 
 // Import routes
-import clientRoutes from './routes/clientRoutes.js';
+// import clientRoutes from './routes/clientRoutes.js'; // Isolating: Step 1a
 import styleRoutes from './routes/styleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-// import adminRoutes from './routes/adminRoutes.js'; // Temporarily commented out to isolate error
+// import adminRoutes from './routes/adminRoutes.js'; // Already commented out
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swaggerConfig.js';
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
