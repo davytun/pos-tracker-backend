@@ -1,14 +1,10 @@
-# POS Tracker Backend API Documentation
+# Fittingz API Documentation
 
-## Base URL
-
-```
-http://localhost:5000
-```
+This document describes the available API endpoints for the Fittingz backend. All endpoints are prefixed with `/api/v1`.
 
 ---
 
-## Authentication Endpoints
+## Authentication
 
 ### Register
 
@@ -16,13 +12,26 @@ http://localhost:5000
 - **Body:**
   ```json
   {
-    "email": "user@example.com",
-    "password": "yourPassword",
-    "name": "User Name"
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "password": "yourpassword",
+    "isAdmin": false
   }
   ```
 - **Response:**
-  - `201 Created` with user info and tokens, or error message
+  ```json
+  {
+    "_id": "userId123",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "isAdmin": false,
+    "token": "jwt.token.here"
+  }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "User already exists" }
+  ```
 
 ### Login
 
@@ -30,74 +39,282 @@ http://localhost:5000
 - **Body:**
   ```json
   {
-    "email": "user@example.com",
-    "password": "yourPassword"
+    "email": "jane@example.com",
+    "password": "yourpassword"
   }
   ```
-- **Response:**
-  - `200 OK` with user info and tokens, or error message
-
-### Google OAuth
-
-- **GET** `/auth/google`
-  - Redirects to Google for authentication
-- **GET** `/auth/google/callback`
-  - Handles Google callback, issues tokens, and redirects to frontend
-
----
-
-## Protected Endpoints
-
-### Example: Protected Route
-
-- **GET** `/protected`
-- **Headers:**
-  - `Authorization: Bearer <access_token>`
-- **Response:**
-  - `200 OK` with user info if token is valid
-  - `401 Unauthorized` or `403 Forbidden` if token is missing/invalid
-
----
-
-## How to Use JWT Tokens
-
-- After login or Google OAuth, store the `access_token` securely in your app.
-- For any protected endpoint, include the token in the `Authorization` header:
-  ```
-  Authorization: Bearer <access_token>
+- **Response:** Same as Register
+- **Error Example:**
+  ```json
+  { "message": "Invalid credentials" }
   ```
 
+### Get Profile
+
+- **GET** `/auth/profile`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  {
+    "_id": "userId123",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "isAdmin": false,
+    "createdAt": "2025-07-04T12:00:00.000Z",
+    "updatedAt": "2025-07-04T12:00:00.000Z"
+  }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Not authorized, token failed" }
+  ```
+
+### Update Profile
+
+- **PUT** `/auth/profile`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+  ```json
+  {
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com"
+  }
+  ```
+- **Response:** Same as Register
+- **Error Example:**
+  ```json
+  { "message": "Not authorized, token failed" }
+  ```
+
 ---
 
-## Error Responses
+## Clients
 
-- `400 Bad Request` — Invalid input or missing fields
-- `401 Unauthorized` — Missing or invalid token
-- `403 Forbidden` — Token expired or not allowed
-- `500 Internal Server Error` — Server error
+### Get All Clients
+
+- **GET** `/clients`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  [
+    {
+      "_id": "clientId1",
+      "name": "Client One",
+      "email": "client1@example.com",
+      "phone": "123-456-7890"
+    },
+    {
+      "_id": "clientId2",
+      "name": "Client Two",
+      "email": "client2@example.com",
+      "phone": "987-654-3210"
+    }
+  ]
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Not authorized, token failed" }
+  ```
+
+### Get Client by ID
+
+- **GET** `/clients/{clientId}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  {
+    "_id": "clientId1",
+    "name": "Client One",
+    "email": "client1@example.com",
+    "phone": "123-456-7890"
+  }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Client not found" }
+  ```
+
+### Create Client
+
+- **POST** `/clients`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+  ```json
+  {
+    "name": "Client New",
+    "email": "newclient@example.com",
+    "phone": "555-555-5555"
+  }
+  ```
+- **Response:** Client object
+- **Error Example:**
+  ```json
+  { "message": "Validation error" }
+  ```
+
+### Update Client
+
+- **PUT** `/clients/{clientId}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+  ```json
+  {
+    "name": "Client Updated"
+  }
+  ```
+- **Response:** Updated client object
+- **Error Example:**
+  ```json
+  { "message": "Client not found" }
+  ```
+
+### Delete Client
+
+- **DELETE** `/clients/{clientId}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  { "message": "Client deleted" }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Client not found" }
+  ```
 
 ---
 
-## Example: Fetching a Protected Resource
+## Styles
 
-```js
-fetch("http://localhost:5000/protected", {
-  headers: {
-    Authorization: "Bearer <access_token>",
-  },
-})
-  .then((res) => res.json())
-  .then((data) => console.log(data));
-```
+### Get All Styles
+
+- **GET** `/styles`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  [
+    {
+      "_id": "styleId1",
+      "name": "Style One",
+      "description": "Description of style one"
+    },
+    {
+      "_id": "styleId2",
+      "name": "Style Two",
+      "description": "Description of style two"
+    }
+  ]
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Not authorized, token failed" }
+  ```
+
+### Get Style by ID
+
+- **GET** `/styles/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  {
+    "_id": "styleId1",
+    "name": "Style One",
+    "description": "Description of style one"
+  }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Style not found" }
+  ```
+
+### Create Style
+
+- **POST** `/styles`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+  ```json
+  {
+    "name": "Style New",
+    "description": "A new style description"
+  }
+  ```
+- **Response:** Style object
+- **Error Example:**
+  ```json
+  { "message": "Validation error" }
+  ```
+
+### Update Style
+
+- **PUT** `/styles/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+  ```json
+  {
+    "name": "Style Updated"
+  }
+  ```
+- **Response:** Updated style object
+- **Error Example:**
+  ```json
+  { "message": "Style not found" }
+  ```
+
+### Delete Style
+
+- **DELETE** `/styles/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+  ```json
+  { "message": "Style deleted" }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Style not found" }
+  ```
 
 ---
 
-## Notes
+## Admin
 
-- All endpoints return JSON.
-- Use HTTPS in production for all requests.
-- Refresh tokens are set as HTTP-only cookies and should be handled by the backend.
+### Get All Users
+
+- **GET** `/admin/users`
+- **Headers:** `Authorization: Bearer <admin token>`
+- **Response:**
+  ```json
+  [
+    {
+      "_id": "userId1",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "isAdmin": true
+    },
+    {
+      "_id": "userId2",
+      "name": "Regular User",
+      "email": "user@example.com",
+      "isAdmin": false
+    }
+  ]
+  ```
+- **Error Example:**
+  ```json
+  { "message": "Not authorized as admin" }
+  ```
+
+### Delete User
+
+- **DELETE** `/admin/users/{userId}`
+- **Headers:** `Authorization: Bearer <admin token>`
+- **Response:**
+  ```json
+  { "message": "User deleted" }
+  ```
+- **Error Example:**
+  ```json
+  { "message": "User not found" }
+  ```
 
 ---
 
-For more endpoints or details, update this file as your backend grows.
+> For more details on request/response bodies, see the relevant controller or model files.

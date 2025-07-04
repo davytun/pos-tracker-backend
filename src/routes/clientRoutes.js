@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 import {
   createClient,
   getClients,
@@ -6,23 +6,21 @@ import {
   updateClient,
   deleteClient,
   linkStyleToClient,
-  getClientStyles
-} from '../controllers/clientController.js';
-import protect from '../middleware/authMiddleware.js';
-import { body, param, query } from 'express-validator';
-import { handleValidationErrors } from '../middleware/validationResultHandler.js';
+  getClientStyles,
+} from "../controllers/clientController.js";
+import protect from "../middleware/authMiddleware.js";
+import { body, param, query } from "express-validator";
+import { handleValidationErrors } from "../middleware/validationResultHandler.js";
 
 const router = express.Router();
 
 /**
- * @swagger
  * tags:
  * name: Clients
  * description: Client management and measurements
  */
 
 /**
- * @swagger
  * /clients:
  * post:
  * summary: Create a new client
@@ -98,21 +96,46 @@ const router = express.Router();
  * schema:
  * $ref: '#/components/schemas/ErrorResponse'
  */
-router.route('/')
+router
+  .route("/")
   .post(
     protect,
     [
-      body('name').trim().notEmpty().withMessage('Client name is required.')
-        .isLength({ min: 2 }).withMessage('Client name must be at least 2 characters.')
+      body("name")
+        .trim()
+        .notEmpty()
+        .withMessage("Client name is required.")
+        .isLength({ min: 2 })
+        .withMessage("Client name must be at least 2 characters.")
         .escape(),
-      body('phone').notEmpty().withMessage('Phone number is required.')
-        .isString().withMessage('Phone number must be a string.')
+      body("phone")
+        .notEmpty()
+        .withMessage("Phone number is required.")
+        .isString()
+        .withMessage("Phone number must be a string.")
         .escape(),
-      body('email').optional({ checkFalsy: true }).isEmail().withMessage('Provide a valid email address.').normalizeEmail(),
-      body('eventType').optional().isString().trim().escape(),
-      body('measurements').optional().isArray().withMessage('Measurements must be an array.'),
-      body('measurements.*.name').if(body('measurements').exists()).notEmpty().withMessage('Measurement name is required.').trim().escape(),
-      body('measurements.*.value').if(body('measurements').exists()).notEmpty().withMessage('Measurement value is required.').trim().escape(),
+      body("email")
+        .optional({ checkFalsy: true })
+        .isEmail()
+        .withMessage("Provide a valid email address.")
+        .normalizeEmail(),
+      body("eventType").optional().isString().trim().escape(),
+      body("measurements")
+        .optional()
+        .isArray()
+        .withMessage("Measurements must be an array."),
+      body("measurements.*.name")
+        .if(body("measurements").exists())
+        .notEmpty()
+        .withMessage("Measurement name is required.")
+        .trim()
+        .escape(),
+      body("measurements.*.value")
+        .if(body("measurements").exists())
+        .notEmpty()
+        .withMessage("Measurement value is required.")
+        .trim()
+        .escape(),
     ],
     handleValidationErrors,
     createClient
@@ -120,8 +143,8 @@ router.route('/')
   .get(
     protect,
     [
-      query('name').optional().isString().trim(),
-      query('eventType').optional().isString().trim(),
+      query("name").optional().isString().trim(),
+      query("eventType").optional().isString().trim(),
     ],
     handleValidationErrors,
     getClients
@@ -258,39 +281,66 @@ router.route('/')
  * schema:
  * $ref: '#/components/schemas/ErrorResponse'
  */
-router.route('/:id')
+router
+  .route("/:id")
   .get(
     protect,
-    [
-      param('id').isMongoId().withMessage('Invalid client ID format.'),
-    ],
+    [param("id").isMongoId().withMessage("Invalid client ID format.")],
     handleValidationErrors,
     getClientById
   )
   .put(
     protect,
     [
-      param('id').isMongoId().withMessage('Invalid client ID format.'),
-      body('name').optional().trim().notEmpty().withMessage('Client name cannot be empty if provided.')
-        .isLength({ min: 2 }).withMessage('Client name must be at least 2 characters if provided.')
+      param("id").isMongoId().withMessage("Invalid client ID format."),
+      body("name")
+        .optional()
+        .trim()
+        .notEmpty()
+        .withMessage("Client name cannot be empty if provided.")
+        .isLength({ min: 2 })
+        .withMessage("Client name must be at least 2 characters if provided.")
         .escape(),
-      body('phone').optional().notEmpty().withMessage('Phone number cannot be empty if provided.')
-        .isString().withMessage('Phone number must be a string.')
+      body("phone")
+        .optional()
+        .notEmpty()
+        .withMessage("Phone number cannot be empty if provided.")
+        .isString()
+        .withMessage("Phone number must be a string.")
         .escape(),
-      body('email').optional({ checkFalsy: true }).isEmail().withMessage('Provide a valid email address if updating.').normalizeEmail(),
-      body('eventType').optional().isString().trim().escape(),
-      body('measurements').optional().isArray().withMessage('Measurements must be an array if provided.'),
-      body('measurements.*.name').if(body('measurements').exists()).notEmpty().withMessage('Measurement name is required if measurements are provided.').trim().escape(),
-      body('measurements.*.value').if(body('measurements').exists()).notEmpty().withMessage('Measurement value is required if measurements are provided.').trim().escape(),
+      body("email")
+        .optional({ checkFalsy: true })
+        .isEmail()
+        .withMessage("Provide a valid email address if updating.")
+        .normalizeEmail(),
+      body("eventType").optional().isString().trim().escape(),
+      body("measurements")
+        .optional()
+        .isArray()
+        .withMessage("Measurements must be an array if provided."),
+      body("measurements.*.name")
+        .if(body("measurements").exists())
+        .notEmpty()
+        .withMessage(
+          "Measurement name is required if measurements are provided."
+        )
+        .trim()
+        .escape(),
+      body("measurements.*.value")
+        .if(body("measurements").exists())
+        .notEmpty()
+        .withMessage(
+          "Measurement value is required if measurements are provided."
+        )
+        .trim()
+        .escape(),
     ],
     handleValidationErrors,
     updateClient
   )
   .delete(
     protect,
-    [
-      param('id').isMongoId().withMessage('Invalid client ID format.'),
-    ],
+    [param("id").isMongoId().withMessage("Invalid client ID format.")],
     handleValidationErrors,
     deleteClient
   );
@@ -387,21 +437,24 @@ router.route('/:id')
  * schema:
  * $ref: '#/components/schemas/ErrorResponse'
  */
-router.route('/:clientId/styles')
+router
+  .route("/:clientId/styles")
   .post(
     protect,
     [
-      param('clientId').isMongoId().withMessage('Invalid client ID format.'),
-      body('styleId').notEmpty().withMessage('styleId is required.').isMongoId().withMessage('Invalid style ID format.'),
+      param("clientId").isMongoId().withMessage("Invalid client ID format."),
+      body("styleId")
+        .notEmpty()
+        .withMessage("styleId is required.")
+        .isMongoId()
+        .withMessage("Invalid style ID format."),
     ],
     handleValidationErrors,
     linkStyleToClient
   )
   .get(
     protect,
-    [
-      param('clientId').isMongoId().withMessage('Invalid client ID format.'),
-    ],
+    [param("clientId").isMongoId().withMessage("Invalid client ID format.")],
     handleValidationErrors,
     getClientStyles
   );

@@ -1,21 +1,18 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import connectDB from './config/db.js';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import connectDB from "./config/db.js";
 
 // Import routes
-import clientRoutes from './routes/clientRoutes.js';
-import styleRoutes from './routes/styleRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
+import clientRoutes from "./routes/clientRoutes.js";
+import styleRoutes from "./routes/styleRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
-// Import Swagger and error handling
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swaggerConfig.js';
-import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
-
+// Import error handling
+import errorHandlerMiddleware from "./middleware/errorHandlerMiddleware.js";
 
 // Load env vars
 dotenv.config();
@@ -29,7 +26,7 @@ const app = express();
 app.use(helmet());
 
 // Body parser
-app.use(express.json({ limit: '10kb' })); // Limit request body size
+app.use(express.json({ limit: "10kb" })); // Limit request body size
 
 // Enable CORS - Configure properly for production
 app.use(cors()); // For now, open. In prod, specify origins: app.use(cors({ origin: process.env.FRONTEND_URL }));
@@ -40,23 +37,20 @@ const limiter = rateLimit({
   max: 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: 'Too many requests from this IP, please try again after 15 minutes',
+  message: "Too many requests from this IP, please try again after 15 minutes",
 });
-app.use('/api', limiter); // Apply to all routes starting with /api
+app.use("/api", limiter); // Apply to all routes starting with /api
 
 // Mount routers
-app.use('/api/v1/clients', clientRoutes);
-app.use('/api/v1/styles', styleRoutes);
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/admin', adminRoutes);
+app.use("/api/v1/clients", clientRoutes);
+app.use("/api/v1/styles", styleRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Basic route for testing
-app.get('/', (req, res) => {
-  res.send('API is running...');
+app.get("/", (req, res) => {
+  res.send("API is running...");
 });
-
-// Serve Swagger UI at /api-docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Global error handler - should be the last middleware
 app.use(errorHandlerMiddleware);
